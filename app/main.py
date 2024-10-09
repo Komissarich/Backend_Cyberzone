@@ -43,7 +43,7 @@ def registration(request: Request, username: str, password: str):
 
     data = request.query_params
 
-    if len(data["username"]) < 4 or len(data["username"] > 30):
+    if len(data["username"]) < 4 or len(data["username"]) > 30:
         return JSONResponse(
             content={
                 "message": "Wrong username length! Minimum length is 4 letters, maximum is 30"
