@@ -37,6 +37,14 @@ connection = psycopg2.connect(
 connection.autocommit = True
 
 
+@app.get("/api")
+def hello():
+    return JSONResponse(
+        content={"message": "Hello, you can find endpoints in openapi.yml file"},
+        status_code=200,
+    )
+
+
 @app.post("/api/auth/register")
 def registration(request: Request, username: str, password: str):
     cursor = connection.cursor()
