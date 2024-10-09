@@ -1,0 +1,502 @@
+openapi: "3.0.1"
+info:
+  title: Cyberzone Api
+  version: "1.0"
+servers:
+  - url: http://localhost:8010/api
+paths:
+  /auth/register:
+      post:
+        summary: Регистрация нового пользователя
+        description: |
+          Используется для регистрации нового пользователя по логину и паролю.
+        operationId: auth_register
+        requestBody:
+          description: Данные для регистрации пользователя.
+          required: true
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  login:
+                    $ref: "#/components/schemas/userName"
+                  password:
+                    $ref: "#/components/schemas/userPassword"
+                required:
+                  - login
+                  - password
+        responses:
+          "200":
+            description: В случае успеха возвращается профиль зарегистрированного пользователя
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    profile:
+                      $ref: "#/components/schemas/userProfile"
+                  required:
+                    - profile
+          "400":
+            description: |
+              Регистрационные данные не соответствуют ожидаемому формату и требованиям. 
+              - Длина логина меньше 4 символов
+              - Недостаточно "надежный" пароль (Надежным считается пароль содержащий латинские буквы a-z, как минимум одну заглавную A-Z, а также минимум одну цифру, при этом с длиной минимум 6, максимум 100 символов).
+            content:
+              application/json:
+                schema:
+                  $ref: "#/components/schemas/errorResponse"
+          "409":
+            description: |
+              Нарушено требование на уникальность авторизационных данных пользователей.
+
+              Данный код означает, что пользователь с таким логином уже существует в базе данных
+            content:
+              application/json:
+                schema:
+                  $ref: "#/components/schemas/errorResponse"
+
+  /auth/sign-in:
+    post:
+      summary: Аутентификация для получения токена
+      description: |
+        Процедура аутентификации по логину и паролю позволяет получить токен, который в дальнейшем будет использоваться пользователем для выполнения операций, требующих авторизацию.
+        
+        Токен имеет время жизни (5 минут) и по истечению таймера, он перестанет быть валидным
+        
+      operationId: auth_sign_in
+      requestBody:
+        description: Данные для аутентификации пользователя.
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                login:
+                  $ref: "#/components/schemas/userName"
+                password:
+                  $ref: "#/components/schemas/userPassword"
+              required:
+                - login
+                - password
+      responses:
+        "200":
+          description: Успешная аутентификация
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                    description: Сгенерированный токен пользователя
+                    minLength: 20
+                    example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+                required:
+                  - token
+        "401":
+          description: Пользователь с указанным логином и паролем не найден
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/errorResponse"
+
+  /me/profile:
+    get:
+      summary: Получение собственного профиля
+      description: |
+        Используется для получения пользователем его собственного профиля.
+
+        Сервер должен идентифицировать пользователя по переданному токену. 
+      security:
+        - bearerAuth: []
+      operationId: lolprofilekek
+      responses:
+        "200":
+          description: Передан действительный токен, в ответе возвращается профиль пользователя.
+          content:
+            application/json:
+              schema:
+                  type: object
+                  properties:
+                    profile:
+                      $ref: "#/components/schemas/userProfile"
+                  required:
+                    - profile
+        "409":
+          description: Переданный токен не существует либо некорректен.
+          content:
+            application/json:
+            
+              schema:
+                $ref: "#/components/schemas/errorResponse"
+    patch:
+      summary: Изменение пароля
+      description: |
+        Используется для редактирования параметров профиля пользователя.
+
+        Сервер должен идентифицировать пользователя по переданному токену.
+
+        После успешного изменения пароля, токен перестанет быть валидным и необходимо будет получить новый токен
+      security:
+        - bearerAuth: []
+      operationId: update_profile
+      requestBody:
+        description: |
+          В теле запроса требуется передать новый пароль
+
+          
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                password:
+                  $ref: "#/components/schemas/userPassword"
+
+      responses:
+        "200":
+          description: Передан действительный токен, в ответе возвращается профиль пользователя.
+          content:
+             application/json:
+              schema:
+                  type: object
+                  properties:
+                    profile:
+                      $ref: "#/components/schemas/userProfile"
+                  required:
+                    - profile
+        "409":
+          description: Переданный токен не существует либо некорректен.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/errorResponse"
+        "400":
+          description: |
+            Пароль не соответствует ожидаемому формату и требованиям. 
+
+            
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/errorResponse"
+
+  /posts/new:
+    post:
+      summary: Создание нового поста
+      description: |
+        Используется для создания нового поста.
+
+        Сервер должен идентифицировать пользователя по переданному токену. 
+      security:
+        - bearerAuth: []
+      operationId: new_post
+      requestBody:
+        description: Контент поста.
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                content:
+                  $ref: "#/components/schemas/postContent"
+              required:
+                - content
+      responses:
+        "200":
+          description: Пост создан. Сервер назначает уникальный идентификатор и время создания поста.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  created_post:
+                    $ref: "#/components/schemas/post"
+        "409":
+          description: Переданный токен не существует либо некорректен.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/errorResponse"
+        "400":
+          description: Слишком длинный текст поста
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/errorResponse"
+
+  /posts/update_post:
+    post:
+      summary: Обновление текста поста 
+      description: |
+        Используется для изменения текста в посте.
+
+        Сервер должен идентифицировать пользователя по переданному токену. 
+      security:
+        - bearerAuth: []
+      operationId: post_update
+      requestBody:
+          description: Данные для изменения.
+          required: true
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  postId:
+                    $ref: "#/components/schemas/postId"
+                  text:
+                    $ref: "#/components/schemas/postContent"
+                required:
+                  - postId
+                  - text
+      responses:
+        "200":
+          description: Пост найден. 
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  updated_post:
+                    $ref: "#/components/schemas/post"
+        "409":
+          description: Переданный токен не существует либо некорректен.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/errorResponse"
+        "404":
+          description: Указанный пост не найден либо к нему нет доступа.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/errorResponse"
+       
+  /posts/delete_post/{postId}:
+    post:
+      summary: Удаление поста
+      description: |
+        Используется для удаления поста. Пользователь может удалить только свой пост.
+
+        Сервер должен идентифицировать пользователя по переданному токену. 
+      security:
+        - bearerAuth: []
+      operationId: delete_post
+      parameters:
+        - name: postId
+          description: ID поста.
+          required: true
+          in: path
+          schema:
+            $ref: "#/components/schemas/postId"
+      responses:
+        "200":
+          description: Пост найден и удален. Выводится обновленный список постов пользователя
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  deleted post:
+                    $ref: "#/components/schemas/post"
+        "409":
+          description: Переданный токен не существует либо некорректен.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/errorResponse"
+        "404":
+          description: Указанный пост не найден либо к нему нет доступа.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/errorResponse"
+
+  /posts/{postId}:
+    get:
+      summary: Получить пост по ID
+      description: |
+        Используется для получения поста по его идентификатору.
+
+        Сервер должен идентифицировать пользователя по переданному токену. 
+      security:
+        - bearerAuth: []
+      operationId: get_post
+      parameters:
+        - name: postId
+          description: ID поста.
+          required: true
+          in: path
+          schema:
+            $ref: "#/components/schemas/postId"
+      responses:
+        "200":
+          description: Пост найден.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  post:
+                    $ref: "#/components/schemas/post"
+        "409":
+          description: Переданный токен не существует либо некорректен.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/errorResponse"
+        "404":
+          description: Указанный пост не найден либо к нему нет доступа.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/errorResponse"
+
+  /posts/user_posts/{username}:
+    get:
+      summary: Получить все посты любого пользователя
+      description: |
+        Используется для получения списка публикаций любого пользователя.
+
+        Сервер должен идентифицировать пользователя по переданному токену. 
+      security:
+        - bearerAuth: []
+      operationId: user_posts
+      parameters:
+        - name: username
+          description: Логин пользователя.
+          required: true
+          in: path
+          schema:
+            $ref: "#/components/schemas/userName"
+
+      responses:
+        "200":
+          description: |
+            Список публикаций пользователя, отсортированных по убыванию по дате обновления.
+
+            В начале идут публикации, которые были обновлены совсем недавно.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/post"
+        "409":
+          description: Переданный токен не существует либо некорректен.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/errorResponse"
+        "404":
+          description: Пользователь не найден.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/errorResponse"
+
+components:
+  schemas:
+    userName:
+      type: string
+      description: Логин пользователя
+      maxLength: 30
+      pattern: "[a-zA-Z0-9-]+"
+      example: Egor
+    userPassword:
+      type: string
+      description: |
+        Пароль пользователя, к которому предъявляются следующие требования:
+
+        - Длина пароля не менее 6 символов.
+        - Присутствуют латинские символы в нижнем и верхнем регистре.
+        - Присутствует минимум одна цифра.
+      minLength: 6
+      maxLength: 100
+      example: $aba4821FWfew01#.fewA$
+    userCreatedAt:
+      type: string
+      description: Время создания аккаунта
+      example: 2024-10-07 21:15:58.771733+00:00
+    userUpdatedAt:
+      type: string
+      description: Время обновления аккаунта
+      example: 2024-10-07 21:15:58.771733+00:00
+      
+    userProfile:
+      type: object
+      description: Информация о профиле пользователя
+      properties:
+        username:
+          $ref: "#/components/schemas/userName"
+        created_at:
+          $ref: "#/components/schemas/userCreatedAt"
+        updated_at:
+          $ref: "#/components/schemas/userUpdatedAt"
+      required:
+        - login
+        - created_at
+        - updated_at
+    postId:
+      type: string
+      description: Уникальный идентификатор поста, присвоенный сервером.
+      example: 550e8400-e29b-41d4-a716-446655440000
+      maxLength: 100
+    postContent:
+      type: string
+      description: Текст публикации.
+      example: Never gonna give you up...
+      maxLength: 1000
+    post:
+      type: object
+      description: Пользовательская публикация.
+      properties:
+        id:
+          $ref: "#/components/schemas/postId"
+        content:
+          $ref: "#/components/schemas/postContent"
+        user_id:
+          $ref: "#/components/schemas/userName"
+       
+        createdAt:
+          type: string
+          description: |
+            Серверная дата и время в момент, когда пользователь создал данную публикацию.
+          example: 2024-10-07 21:15:58.771733+00:00
+        updatedAt:
+          type: string
+          description: |
+            Серверная дата и время в момент, когда пользователь обновил данную публикацию.
+          example: 2024-10-07 21:15:58.771733+00:00
+       
+      required:
+        - id
+        - content
+        - user_id
+        - createdAt
+        - updatedAt
+    errorResponse:
+      type: object
+      description: Используется для возвращения ошибки пользователю
+      properties:
+        reason:
+          type: string
+          description: Описание ошибки в свободной форме
+          minLength: 5
+      required:
+        - reason
+      example:
+        reason: <объяснение, почему запрос пользователя не может быть обработан>
+        
+
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
