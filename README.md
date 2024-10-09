@@ -1,4 +1,4 @@
-# Backend_Cyberzone
+![image](https://github.com/user-attachments/assets/5bc2496a-b1f4-4e2b-9c73-16c6eef78815)# Backend_Cyberzone
 Тестовое задание для отдела IT Киберзоны
 ## Содержание
 
@@ -31,6 +31,8 @@ cd Backend-Cyberzone
  ```bash
 docker-compose up --build
 ```
+Важно! Если у вас выскочит ошибка вида ![image](https://github.com/user-attachments/assets/fc5045f7-11a6-4fef-aee2-3406afea9f5c), тогда просто выполните команду docker-compose down, а затем снова запустите проект с помощью docker-compose up.
+
 3. Обратиться к Api можно через адресную строку браузера (localhost:8010/api) или же через программу Postman (http://127.0.0.1:8010/api)
 
 
