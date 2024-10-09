@@ -1,4 +1,4 @@
-![image](https://github.com/user-attachments/assets/5bc2496a-b1f4-4e2b-9c73-16c6eef78815)# Backend_Cyberzone
+# Backend_Cyberzone
 Тестовое задание для отдела IT Киберзоны
 ## Содержание
 
